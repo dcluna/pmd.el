@@ -88,5 +88,19 @@ Example: \"var = \" + var."
   (setq-local pmd-print-close ");")
   (setq-local pmd-/multi-var-format-fn #'pmd//rust-println-exp))
 
+(add-hook 'js2-mode-hook 'pmd//js2-setup)
+(add-hook 'enh-ruby-mode-hook 'pmd//ruby-setup)
+(add-hook 'ruby-mode-hook 'pmd//ruby-setup)
+(add-hook 'coffee-mode-hook 'pmd//coffee-setup)
+(add-hook 'rust-mode-hook 'pmd//rust-setup)
+
+(defun pmd/print-vars (input)
+  (interactive "sVars: ")
+  (when (not (looking-at-p "^[[:space:]]*$"))
+    (end-of-line)
+    (insert "\n")
+    (back-to-indentation))
+  (insert (pmd//prepare-output (pmd//parse-input input))))
+
 (provide 'pmd)
 ;;; pmd.el ends here

@@ -18,3 +18,11 @@
   (pmd//rust-setup)
   (should (equal "println!(\"var1 = {:?} | var2 = {:?}\", var1, var2);" (pmd//prepare-output (list "var1" "var2"))))
   )
+
+(ert-deftest pmd/print-vars-test ()
+  (with-temp-buffer
+    (pmd//ruby-setup)
+    (insert "1 + 1")
+    (pmd/print-vars "a,b")
+    (should (equal (buffer-string) "1 + 1\nputs \"a = #{a} | b = #{b}\"")))
+  )
