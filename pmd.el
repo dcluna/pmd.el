@@ -32,13 +32,11 @@
 (defvar pmd-print-close nil
   "String that closes a print-var statement.")
 
-(defvar pmd-/var-formatting-function nil
-  "Formatting function for a variable inside a print statement. Mostly language-specific.")
+(defvar pmd-/individual-var-format-fn nil
+  "Formatting function for an individual variable inside a print statement.")
 
-(defun pmd//ruby-interpolation-formatting-fn (var)
-  "VAR-formatting fn for languages that accept Ruby-ish string interpolation.
-Example: \"var = #{var}\"."
-  (format "%s = #{%s}" var var))
+(defvar pmd-/multi-var-format-fn nil
+  "Formatting function for a list of variables. Mainly useful for `format'-like statements.")
 
 (defun pmd//parse-input (input)
   "Parses INPUT string into a list of variables."
@@ -46,12 +44,49 @@ Example: \"var = #{var}\"."
 
 (defun pmd//prepare-output (list-vars)
   "Prepares print statement to display LIST-VARS."
-  (concat pmd-print-open (mapconcat pmd-/var-formatting-function list-vars pmd-output-separator) pmd-print-close))
+  (concat pmd-print-open
+          (if pmd-/multi-var-format-fn
+              (funcall pmd-/multi-var-format-fn list-vars)
+            (mapconcat pmd-/individual-var-format-fn list-vars pmd-output-separator))
+          pmd-print-close))
+
+(defun pmd//ruby-interpolation-formatting-fn (var)
+  "VAR-formatting fn for languages that accept Ruby-ish string interpolation.
+Example: \"var = #{var}\"."
+  (format "%s = #{%s}" var var))
+
+(defun pmd//js-interpolation-formatting-fn (var)
+  "VAR-formatting fn for Javascript.
+Example: \"var = \" + var."
+  (format "\"%s = \" + %s" var var))
+
+(defun pmd//rust-println-exp (list-vars)
+  (concat
+   "\""
+   (mapconcat (lambda (var) (concat var " = {:?}")) list-vars pmd-output-separator)
+   "\", "
+   (mapconcat 'identity list-vars ", ")))
+
+(defun pmd//js2-setup ()
+  (setq-local pmd-print-open "console.log(")
+  (setq-local pmd-print-close ")")
+  (setq-local pmd-output-separator " + ")
+  (setq-local pmd-/individual-var-format-fn #'pmd//js-interpolation-formatting-fn))
+
+(defun pmd//coffee-setup ()
+  (setq-local pmd-print-open "console.log \"")
+  (setq-local pmd-print-close "\"")
+  (setq-local pmd-/individual-var-format-fn #'pmd//ruby-interpolation-formatting-fn))
 
 (defun pmd//ruby-setup ()
   (setq-local pmd-print-open "puts \"")
   (setq-local pmd-print-close "\"")
-  (setq-local pmd-/var-formatting-function #'pmd//ruby-interpolation-formatting-fn))
+  (setq-local pmd-/individual-var-format-fn #'pmd//ruby-interpolation-formatting-fn))
+
+(defun pmd//rust-setup ()
+  (setq-local pmd-print-open "println!(")
+  (setq-local pmd-print-close ");")
+  (setq-local pmd-/multi-var-format-fn #'pmd//rust-println-exp))
 
 (provide 'pmd)
 ;;; pmd.el ends here
