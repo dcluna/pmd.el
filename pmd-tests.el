@@ -1,6 +1,13 @@
+(ert-deftest pmd//extract-modifiers-test ()
+  (should (equal (list "1,2,3" nil) (pmd//extract-modifiers "1,2,3")))
+  (should (equal (list "1,2,3" "is") (pmd//extract-modifiers "is/1,2,3")))
+  (should (equal (list "1,2,3/a,b" "is") (pmd//extract-modifiers "is/1,2,3/a,b")))
+  )
+
 (ert-deftest pmd//parse-input-test ()
   (should (equal (list "var1" "var2") (pmd//parse-input "var1\\,   var2")))
   (should (equal (list "[1,2,3]") (pmd//parse-input "[1,2,3]")))
+  (should (equal (list "1" "2" "3") (pmd//parse-input "1,2,3/is")))
   )
 
 (ert-deftest pmd//ruby-prepare-output-test ()
@@ -23,6 +30,6 @@
   (with-temp-buffer
     (pmd//ruby-setup)
     (insert "1 + 1")
-    (pmd/print-vars "a,b")
+    (pmd/print-vars "a,b/is")
     (should (equal (buffer-string) "1 + 1\nputs \"a = #{a} | b = #{b}\"")))
   )

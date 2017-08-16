@@ -25,6 +25,7 @@
 ;;; Code:
 
 (defvar pmd-input-separator ",")
+(defvar pmd-modifier-separator "/")
 (defvar pmd-output-separator " | ")
 
 (defvar pmd-print-open nil
@@ -38,9 +39,17 @@
 (defvar pmd-/multi-var-format-fn nil
   "Formatting function for a list of variables. Mainly useful for `format'-like statements.")
 
+(defun pmd//extract-modifiers (input)
+  "Splits modifiers and input vars from INPUT."
+  (let ((input-list (split-string input pmd-modifier-separator)))
+    (if (<= (length input-list) 1)
+        (append input-list '(nil))
+      (list (mapconcat 'identity (cdr input-list) pmd-modifier-separator) (car input-list)))))
+
 (defun pmd//parse-input (input)
   "Parses INPUT string into a list of variables."
-  (split-string input (concat "\\\\" pmd-input-separator) t "[[:space:]]+"))
+  (destructuring-bind (var-input modifiers) (pmd//extract-modifiers input)
+    (split-string var-input (concat "\\\\" pmd-input-separator) t "[[:space:]]+")))
 
 (defun pmd//prepare-output (list-vars)
   "Prepares print statement to display LIST-VARS."
