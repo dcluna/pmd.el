@@ -1,13 +1,19 @@
 (ert-deftest pmd//extract-modifiers-test ()
   (should (equal (list "1,2,3" nil) (pmd//extract-modifiers "1,2,3")))
-  (should (equal (list "1,2,3" "is") (pmd//extract-modifiers "is/1,2,3")))
-  (should (equal (list "1,2,3/a,b" "is") (pmd//extract-modifiers "is/1,2,3/a,b")))
+  (should (equal (list "1,2,3" '("is")) (pmd//extract-modifiers "is/1,2,3")))
+  (should (equal (list "1,2,3/a,b" '("is")) (pmd//extract-modifiers "is/1,2,3/a,b")))
+  (should (equal (list "1,2,3/a,b" '("it" "works=fine")) (pmd//extract-modifiers "it;works=fine/1,2,3/a,b")))
+  )
+
+(ert-deftest pmd//process-modifiers-test ()
+  (should (equal '(let ((pmd-ignore-escape-input-separator t)) (look ma no hands)) ( pmd--m-ignore-escape '(look ma no hands))))
+  (should (equal '(let ((pmd-ignore-escape-input-separator t)) nil) (pmd//process-modifiers '("ie") nil)))
   )
 
 (ert-deftest pmd//parse-input-test ()
   (should (equal (list "var1" "var2") (pmd//parse-input "var1\\,   var2")))
   (should (equal (list "[1,2,3]") (pmd//parse-input "[1,2,3]")))
-  (should (equal (list "1" "2" "3") (pmd//parse-input "1,2,3/is")))
+  (should (equal (list "1" "2" "3") (pmd//parse-input "ie/1,2,3")))
   )
 
 (ert-deftest pmd//ruby-prepare-output-test ()
@@ -30,6 +36,6 @@
   (with-temp-buffer
     (pmd//ruby-setup)
     (insert "1 + 1")
-    (pmd/print-vars "a,b/is")
+    (pmd/print-vars "ie/a,b")
     (should (equal (buffer-string) "1 + 1\nputs \"a = #{a} | b = #{b}\"")))
   )

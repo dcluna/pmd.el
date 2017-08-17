@@ -27,6 +27,7 @@
 (defvar pmd-input-separator ",")
 (defvar pmd-modifier-separator "/")
 (defvar pmd-output-separator " | ")
+(defvar pmd-ignore-escape-input-separator nil)
 
 (defvar pmd-print-open nil
   "String that opens a print-var statement.")
@@ -44,12 +45,39 @@
   (let ((input-list (split-string input pmd-modifier-separator)))
     (if (<= (length input-list) 1)
         (append input-list '(nil))
-      (list (mapconcat 'identity (cdr input-list) pmd-modifier-separator) (car input-list)))))
+      (list (mapconcat 'identity (cdr input-list) pmd-modifier-separator) (split-string (car input-list) ";" t "[[:space:]]+")))))
+
+(defconst pmd-modifier-name-alist '((ie . pmd--m-ignore-escape)))
+
+(defun pmd--m-ignore-escape (program)
+  (list 'let '((pmd-ignore-escape-input-separator t))
+     program))
+
+(defun pmd//apply-mod (modifier program)
+  "Translates MODIFIER into an internal modifier function and generates a new PROGRAM based on the original."
+  (let ((mod-fn (alist-get (intern modifier) pmd-modifier-name-alist)))
+    (funcall mod-fn program)))
+
+(defun pmd//process-modifiers (modifiers program)
+  "Generates a new PROGRAM from translating MODIFIERS in sequence."
+  (reduce (lambda (new-program modifier)
+            (pmd//apply-mod modifier new-program))
+          (reverse modifiers)
+          :initial-value program))
+
+(defun pmd//split-input (input)
+  "Splits INPUT into a list of variables."
+  (split-string
+   input
+   (concat (if pmd-ignore-escape-input-separator "" "\\\\") pmd-input-separator)
+   t
+   "[[:space:]]+"))
 
 (defun pmd//parse-input (input)
   "Parses INPUT string into a list of variables."
   (destructuring-bind (var-input modifiers) (pmd//extract-modifiers input)
-    (split-string var-input (concat "\\\\" pmd-input-separator) t "[[:space:]]+")))
+    (let ((generated-program (pmd//process-modifiers modifiers '(pmd//split-input input))))
+      (eval `(let ((input ,var-input)) ,generated-program)))))
 
 (defun pmd//prepare-output (list-vars)
   "Prepares print statement to display LIST-VARS."
