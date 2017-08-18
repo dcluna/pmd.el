@@ -32,10 +32,10 @@
   (should (equal "println!(\"var1 = {:?} | var2 = {:?}\", var1, var2);" (pmd//prepare-output (list "var1" "var2"))))
   )
 
-(ert-deftest pmd/print-vars-test ()
+(ert-deftest pmd//print-vars-internal-test ()
   (with-temp-buffer
     (pmd//ruby-setup)
     (insert "1 + 1")
-    (pmd/print-vars "ie/a,b")
+    (pmd//print-vars-internal "ie/a,b")
     (should (equal (buffer-string) "1 + 1\nputs \"a = #{a} | b = #{b}\"")))
   )
