@@ -16,7 +16,8 @@
   don't want it to break on every comma), use the prefix "re", which will only
   break when it sees a slash followed by a comma ("\,").
 
-** Generate input from ELisp
+** Generate input from code
 
-   The modifier "el" processes the given input as an elisp program. Useful for
-   generating longer sequences that follow a pattern with less typing.
+   The modifiers "el", "sh", "rb" and "pl processes the given input as an
+   elisp/shell/ruby/perl program. Useful for generating longer sequences that
+   follow a pattern with less typing.

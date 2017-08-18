@@ -49,7 +49,12 @@
 
 (defconst pmd-modifier-name-alist '((re . pmd--m-require-escape)
                                     (el . pmd--m-eval-input-as-lisp)
-                                    (sh . pmd--m-eval-input-as-shell)))
+                                    (sh . pmd--m-eval-input-as-shell)
+                                    (rb . pmd--m-eval-input-as-ruby)
+                                    (pl . pmd--m-eval-input-as-perl)))
+
+(defun pmd//ruby-perl-eval-print (interpreter program)
+  (shell-command-to-string (concat interpreter " -e \"print " program "\"")))
 
 (defun pmd--m-eval-input-as-lisp (program)
   (list 'let '((input (eval (read input))))
@@ -57,6 +62,14 @@
 
 (defun pmd--m-eval-input-as-shell (program)
   (list 'let '((input (shell-command-to-string input)))
+        program))
+
+(defun pmd--m-eval-input-as-ruby (program)
+  (list 'let '((input (pmd//ruby-perl-eval-print "ruby" input)))
+        program))
+
+(defun pmd--m-eval-input-as-perl (program)
+  (list 'let '((input (pmd//ruby-perl-eval-print "perl" input)))
         program))
 
 (defun pmd--m-require-escape (program)
