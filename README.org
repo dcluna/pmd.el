@@ -8,11 +8,15 @@
   the code. It includes an interactive function that accepts a mini-language for
   printing multiple variables.
 
-* Examples
+* Modifiers
+** Require comma escape
 
-  The command splits input whenever it sees a slash followed by a comma
-  ("\,"). This is the default because the comma is significant in most languages
-  (i.e., in Ruby, if you want to inspect an array like "[a,b,c]" as an unit, you
-  don't want it to break on every comma).
+  The command splits input whenever it sees a comma. If you want to check input
+  where the comma is significant (i.e., in Ruby, if you want to inspect an array like "[a,b,c]" as an unit, you
+  don't want it to break on every comma), use the prefix "re", which will only
+  break when it sees a slash followed by a comma ("\,").
 
-  Use the modifier "ie" (for "ignore escape") to use the comma as a separator.
+** Generate input from ELisp
+
+   The modifier "el" processes the given input as an elisp program. Useful for
+   generating longer sequences that follow a pattern with less typing.

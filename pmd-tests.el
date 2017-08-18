@@ -6,14 +6,15 @@
   )
 
 (ert-deftest pmd//process-modifiers-test ()
-  (should (equal '(let ((pmd-ignore-escape-input-separator t)) (look ma no hands)) ( pmd--m-ignore-escape '(look ma no hands))))
-  (should (equal '(let ((pmd-ignore-escape-input-separator t)) nil) (pmd//process-modifiers '("ie") nil)))
+  (should (equal '(let ((pmd-require-escape-input-separator t)) (look ma no hands)) ( pmd--m-require-escape '(look ma no hands))))
+  (should (equal '(let ((pmd-require-escape-input-separator t)) nil) (pmd//process-modifiers '("re") nil)))
+  (should (equal '(let ((input (eval (read input)))) (i can lisp !)) (pmd//process-modifiers '("el") '(i can lisp !))))
   )
 
 (ert-deftest pmd//parse-input-test ()
-  (should (equal (list "var1" "var2") (pmd//parse-input "var1\\,   var2")))
-  (should (equal (list "[1,2,3]") (pmd//parse-input "[1,2,3]")))
-  (should (equal (list "1" "2" "3") (pmd//parse-input "ie/1,2,3")))
+  (should (equal (list "var1" "var2") (pmd//parse-input "re/var1\\,   var2")))
+  (should (equal (list "[1,2,3]") (pmd//parse-input "re/[1,2,3]")))
+  (should (equal (list "1" "2" "3") (pmd//parse-input "1,2,3")))
   )
 
 (ert-deftest pmd//ruby-prepare-output-test ()
@@ -36,6 +37,11 @@
   (with-temp-buffer
     (pmd//ruby-setup)
     (insert "1 + 1")
-    (pmd//print-vars-internal "ie/a,b")
-    (should (equal (buffer-string) "1 + 1\nputs \"a = #{a} | b = #{b}\"")))
+    (pmd//print-vars-internal "a,b")
+    (pmd//print-vars-internal "el/(mapconcat 'identity '(\"var1\" \"var2\") \",\")")
+    (pmd//print-vars-internal "sh/seq 1 1 3 | tr '\n' ',' | sed 's/,$//'")
+    (should (equal (buffer-string) (mapconcat 'identity (list  "1 + 1" 
+                                                               "puts \"a = #{a} | b = #{b}\"" 
+                                                               "puts \"var1 = #{var1} | var2 = #{var2}\"" 
+                                                               "puts \"1 = #{1} | 2 = #{2} | 3 = #{3}\"") "\n"))))
   )

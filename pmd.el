@@ -27,7 +27,7 @@
 (defvar pmd-input-separator ",")
 (defvar pmd-modifier-separator "/")
 (defvar pmd-output-separator " | ")
-(defvar pmd-ignore-escape-input-separator nil)
+(defvar pmd-require-escape-input-separator nil)
 
 (defvar pmd-print-open nil
   "String that opens a print-var statement.")
@@ -47,10 +47,20 @@
         (append input-list '(nil))
       (list (mapconcat 'identity (cdr input-list) pmd-modifier-separator) (split-string (car input-list) ";" t "[[:space:]]+")))))
 
-(defconst pmd-modifier-name-alist '((ie . pmd--m-ignore-escape)))
+(defconst pmd-modifier-name-alist '((re . pmd--m-require-escape)
+                                    (el . pmd--m-eval-input-as-lisp)
+                                    (sh . pmd--m-eval-input-as-shell)))
 
-(defun pmd--m-ignore-escape (program)
-  (list 'let '((pmd-ignore-escape-input-separator t))
+(defun pmd--m-eval-input-as-lisp (program)
+  (list 'let '((input (eval (read input))))
+        program))
+
+(defun pmd--m-eval-input-as-shell (program)
+  (list 'let '((input (shell-command-to-string input)))
+        program))
+
+(defun pmd--m-require-escape (program)
+  (list 'let '((pmd-require-escape-input-separator t))
      program))
 
 (defun pmd//apply-mod (modifier program)
@@ -69,7 +79,7 @@
   "Splits INPUT into a list of variables."
   (split-string
    input
-   (concat (if pmd-ignore-escape-input-separator "" "\\\\") pmd-input-separator)
+   (concat (if pmd-require-escape-input-separator "\\\\" "") pmd-input-separator)
    t
    "[[:space:]]+"))
 
