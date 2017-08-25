@@ -149,6 +149,7 @@ Example: \"var = \" + var."
   (setq-local pmd-/multi-var-format-fn #'pmd//rust-println-exp))
 
 (add-hook 'js2-mode-hook 'pmd//js2-setup)
+(add-hook 'typescript-mode-hook 'pmd//js2-setup)
 (add-hook 'enh-ruby-mode-hook 'pmd//ruby-setup)
 (add-hook 'ruby-mode-hook 'pmd//ruby-setup)
 (add-hook 'coffee-mode-hook 'pmd//coffee-setup)
