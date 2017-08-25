@@ -23,6 +23,7 @@
 ;; Emacs package to automate insertion of debug print statements for various modes.
 
 ;;; Code:
+(require 'cl)
 
 (defvar pmd-input-separator ",")
 (defvar pmd-modifier-separator "/")
