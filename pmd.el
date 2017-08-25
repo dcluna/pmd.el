@@ -129,8 +129,8 @@ Example: \"var = \" + var."
 
 (defun pmd//js2-setup ()
   (setq-local pmd-print-open "console.log(")
-  (setq-local pmd-print-close ")")
-  (setq-local pmd-output-separator " + ")
+  (setq-local pmd-print-close ");")
+  (setq-local pmd-output-separator (concat " + \" " pmd-output-separator " \" + "))
   (setq-local pmd-/individual-var-format-fn #'pmd//js-interpolation-formatting-fn))
 
 (defun pmd//coffee-setup ()

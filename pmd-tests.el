@@ -21,7 +21,7 @@
 
 (ert-deftest pmd//js-prepare-output-test ()
   (pmd//js2-setup)
-  (should (equal "console.log(\"var1 = \" + var1 + \"var2 = \" + var2)" (pmd//prepare-output (list "var1" "var2")))))
+  (should (equal "console.log(\"var1 = \" + var1 + \"  |  \" + \"var2 = \" + var2);" (pmd//prepare-output (list "var1" "var2")))))
 
 (ert-deftest pmd//rust-prepare-output-test ()
   (pmd//rust-setup)
