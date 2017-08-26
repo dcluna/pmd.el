@@ -49,6 +49,7 @@
       (list (mapconcat 'identity (cdr input-list) pmd-modifier-separator) (split-string (car input-list) ";" t "[[:space:]]+")))))
 
 (defconst pmd-modifier-name-alist '((re . pmd--m-require-escape)
+                                    (re! . (pmd--m-require-escape false))
                                     (el . pmd--m-eval-input-as-lisp)
                                     (sh . pmd--m-eval-input-as-shell)
                                     (rb . pmd--m-eval-input-as-ruby)
@@ -73,14 +74,17 @@
   (list 'let '((input (pmd//ruby-perl-eval-print "perl" input)))
         program))
 
-(defun pmd--m-require-escape (program)
-  (list 'let '((pmd-require-escape-input-separator t))
+(defun pmd--m-require-escape (program &optional value)
+  (list 'let (list (list 'pmd-require-escape-input-separator (if (equal value 'false) nil t)))
      program))
 
 (defun pmd//apply-mod (modifier program)
   "Translates MODIFIER into an internal modifier function and generates a new PROGRAM based on the original."
-  (let ((mod-fn (alist-get (intern modifier) pmd-modifier-name-alist)))
-    (funcall mod-fn program)))
+  (let* ((mod-fn-and-possible-args (alist-get (intern modifier) pmd-modifier-name-alist))
+         (list-fn (listp mod-fn-and-possible-args))
+         (mod-fn (if list-fn (car mod-fn-and-possible-args) mod-fn-and-possible-args))
+         (args (if list-fn (cdr mod-fn-and-possible-args) nil)))
+    (apply mod-fn program args)))
 
 (defun pmd//process-modifiers (modifiers program)
   "Generates a new PROGRAM from translating MODIFIERS in sequence."

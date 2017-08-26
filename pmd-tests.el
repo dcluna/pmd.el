@@ -6,13 +6,16 @@
 
 (ert-deftest pmd//process-modifiers-test ()
   (should (equal '(let ((pmd-require-escape-input-separator t)) (look ma no hands)) ( pmd--m-require-escape '(look ma no hands))))
+  (should (equal '(let ((pmd-require-escape-input-separator nil)) (look ma no hands)) ( pmd--m-require-escape '(look ma no hands) 'false)))
   (should (equal '(let ((pmd-require-escape-input-separator t)) nil) (pmd//process-modifiers '("re") nil)))
+  (should (equal '(let ((pmd-require-escape-input-separator nil)) inv) (pmd//process-modifiers '("re!") 'inv)))
   (should (equal '(let ((input (eval (read input)))) (i can lisp !)) (pmd//process-modifiers '("el") '(i can lisp !)))))
 
 (ert-deftest pmd//parse-input-test ()
   (should (equal (list "var1" "var2") (pmd//parse-input "re/var1\\,   var2")))
   (should (equal (list "[1,2,3]") (pmd//parse-input "re/[1,2,3]")))
-  (should (equal (list "1" "2" "3") (pmd//parse-input "1,2,3"))))
+  (should (equal (list "1" "2" "3") (pmd//parse-input "1,2,3")))
+  (should (equal (list "[1" "2" "3]") (pmd//parse-input "re!/[1,2,3]"))))
 
 (ert-deftest pmd//ruby-prepare-output-test ()
   (pmd//ruby-setup)
