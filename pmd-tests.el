@@ -12,10 +12,10 @@
   (should (equal '(let ((input (eval (read input)))) (i can lisp !)) (pmd//process-modifiers '("el") '(i can lisp !)))))
 
 (ert-deftest pmd//parse-input-test ()
-  (should (equal (list "var1" "var2") (pmd//parse-input "re/var1\\,   var2")))
-  (should (equal (list "[1,2,3]") (pmd//parse-input "re/[1,2,3]")))
-  (should (equal (list "1" "2" "3") (pmd//parse-input "1,2,3")))
-  (should (equal (list "[1" "2" "3]") (pmd//parse-input "re!/[1,2,3]"))))
+  (should (equal (list "var1" "var2") (pmd//run-program-in-input-context "re/var1\\,   var2" '(pmd//split-input input))))
+  (should (equal (list "[1,2,3]") (pmd//run-program-in-input-context "re/[1,2,3]" '(pmd//split-input input))))
+  (should (equal (list "1" "2" "3") (pmd//run-program-in-input-context "1,2,3" '(pmd//split-input input))))
+  (should (equal (list "[1" "2" "3]") (pmd//run-program-in-input-context "re!/[1,2,3]" '(pmd//split-input input)))))
 
 (ert-deftest pmd//ruby-prepare-output-test ()
   (pmd//ruby-setup)
@@ -24,7 +24,9 @@
 
 (ert-deftest pmd//js-prepare-output-test ()
   (pmd//js2-setup)
-  (should (equal "console.log(\"var1 = \" + var1 + \"  |  \" + \"var2 = \" + var2);" (pmd//prepare-output (list "var1" "var2")))))
+  (cl-letf (((symbol-function 'file-name-base)
+             (lambda () "myawesomefilename")))
+    (should (equal  "console.log(\"myawesomefilename: \" + \"var1 = \" + var1 + \"  |  \" + \"var2 = \" + var2);"  (pmd//prepare-output (list "var1" "var2"))))))
 
 (ert-deftest pmd//rust-prepare-output-test ()
   (pmd//rust-setup)
@@ -38,6 +40,9 @@
     (pmd//print-vars-internal "el/(mapconcat 'identity '(\"var1\" \"var2\") \",\")")
     (pmd//print-vars-internal "sh/seq 1 1 3 | tr '\n' ',' | sed 's/,$//'")
     (pmd//print-vars-internal "rb/('a'..'d').to_a.join(',')")
+    (cl-letf (((symbol-function 'file-name-base)
+               (lambda () "file")))
+      (pmd//print-vars-internal "fl/test"))
     (should (equal (buffer-string)
                    (mapconcat
                     'identity
@@ -45,5 +50,6 @@
                            "puts \"a = #{a} | b = #{b}\""
                            "puts \"var1 = #{var1} | var2 = #{var2}\""
                            "puts \"1 = #{1} | 2 = #{2} | 3 = #{3}\""
-                           "puts \"a = #{a} | b = #{b} | c = #{c} | d = #{d}\"")
+                           "puts \"a = #{a} | b = #{b} | c = #{c} | d = #{d}\""
+                           "puts \"file: test = #{test}\"")
                     "\n")))))

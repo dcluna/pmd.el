@@ -72,12 +72,11 @@ means to remove KEY from ALIST if the new value is `eql' to DEFAULT."
 
 (defvar pmd-print-close nil
   "String that closes a print-var statement.")
-
-(defvar pmd-/individual-var-format-fn nil
-  "Formatting function for an individual variable inside a print statement.")
+(defvar pmd-show-file-name nil
+  "If set, prints `file-name-base' before the variable contents")
 
 (defvar pmd-/multi-var-format-fn nil
-  "Formatting function for a list of variables. Mainly useful for `format'-like statements.")
+  "Formatting function for a list of variables.")
 
 (defun pmd//extract-modifiers (input)
   "Splits modifiers and input vars from INPUT."
@@ -88,6 +87,8 @@ means to remove KEY from ALIST if the new value is `eql' to DEFAULT."
 
 (defconst pmd-modifier-name-alist '((re . pmd--m-require-escape)
                                     (re! . (pmd--m-require-escape false))
+                                    (fl . pmd--m-show-file-name)
+                                    (fl! . (pmd--m-show-file-name false))
                                     (el . pmd--m-eval-input-as-lisp)
                                     (sh . pmd--m-eval-input-as-shell)
                                     (rb . pmd--m-eval-input-as-ruby)
@@ -116,6 +117,10 @@ means to remove KEY from ALIST if the new value is `eql' to DEFAULT."
   (list 'let (list (list 'pmd-require-escape-input-separator (if (equal value 'false) nil t)))
      program))
 
+(defun pmd--m-show-file-name (program &optional value)
+  (list 'let (list (list 'pmd-show-file-name (if (equal value 'false) nil t)))
+        program))
+
 (defun pmd//apply-mod (modifier program)
   "Translates MODIFIER into an internal modifier function and generates a new PROGRAM based on the original."
   (let* ((mod-fn-and-possible-args (alist-get (intern modifier) pmd-modifier-name-alist))
@@ -139,52 +144,67 @@ means to remove KEY from ALIST if the new value is `eql' to DEFAULT."
    t
    "[[:space:]]+"))
 
-(defun pmd//parse-input (input)
+(defun pmd//file-name-prefix ()
+  (if pmd-show-file-name (concat (file-name-base) ": ") nil))
+
+(defun pmd//run-program-in-input-context (input &optional program)
   "Parses INPUT string into a list of variables."
-  (destructuring-bind (var-input modifiers) (pmd//extract-modifiers input)
-    (let ((generated-program (pmd//process-modifiers modifiers '(pmd//split-input input))))
-      (eval `(let ((input ,var-input)) ,generated-program)))))
+  (let ((program (or program '(pmd//prepare-output (pmd//split-input input)))))
+    (destructuring-bind (var-input modifiers) (pmd//extract-modifiers input)
+      (let ((generated-program (pmd//process-modifiers modifiers program)))
+        (eval `(let ((input ,var-input)) ,generated-program))))))
+
+(defun pmd//apply-formatting-fn (list-vars)
+  (funcall pmd-/multi-var-format-fn list-vars))
 
 (defun pmd//prepare-output (list-vars)
   "Prepares print statement to display LIST-VARS."
-  (concat pmd-print-open
-          (if pmd-/multi-var-format-fn
-              (funcall pmd-/multi-var-format-fn list-vars)
-            (mapconcat pmd-/individual-var-format-fn list-vars pmd-output-separator))
-          pmd-print-close))
+  (pmd//apply-formatting-fn list-vars))
 
-(defun pmd//ruby-interpolation-formatting-fn (var)
+(defun pmd//ruby-interpolation-formatting-fn (list-vars)
   "VAR-formatting fn for languages that accept Ruby-ish string interpolation.
 Example: \"var = #{var}\"."
-  (format "%s = #{%s}" var var))
+  (concat
+   pmd-print-open
+   (pmd//file-name-prefix)
+   (mapconcat (lambda (var) (format "%s = #{%s}" var var)) list-vars pmd-output-separator)
+   pmd-print-close))
 
-(defun pmd//js-interpolation-formatting-fn (var)
+(defun pmd//js-interpolation-formatting-fn (list-vars)
   "VAR-formatting fn for Javascript.
 Example: \"var = \" + var."
-  (format "\"%s = \" + %s" var var))
+  (concat
+   pmd-print-open
+   "\""
+   (concat (pmd//file-name-prefix) "\" + ")
+   (mapconcat (lambda (var) (format "\"%s = \" + %s" var var)) list-vars (concat " + \" " pmd-output-separator " \" + "))
+   pmd-print-close))
 
 (defun pmd//rust-println-exp (list-vars)
   (concat
+   pmd-print-open
    "\""
+   (pmd//file-name-prefix)
    (mapconcat (lambda (var) (concat var " = {:?}")) list-vars pmd-output-separator)
    "\", "
-   (mapconcat 'identity list-vars ", ")))
+   (mapconcat 'identity list-vars ", ")
+   pmd-print-close))
 
 (defun pmd//js2-setup ()
   (setq-local pmd-print-open "console.log(")
   (setq-local pmd-print-close ");")
-  (setq-local pmd-output-separator (concat " + \" " pmd-output-separator " \" + "))
-  (setq-local pmd-/individual-var-format-fn #'pmd//js-interpolation-formatting-fn))
+  (setq-local pmd-show-file-name t)
+  (setq-local pmd-/multi-var-format-fn #'pmd//js-interpolation-formatting-fn))
 
 (defun pmd//coffee-setup ()
   (setq-local pmd-print-open "console.log \"")
   (setq-local pmd-print-close "\"")
-  (setq-local pmd-/individual-var-format-fn #'pmd//ruby-interpolation-formatting-fn))
+  (setq-local pmd-/multi-var-format-fn #'pmd//ruby-interpolation-formatting-fn))
 
 (defun pmd//ruby-setup ()
   (setq-local pmd-print-open "puts \"")
   (setq-local pmd-print-close "\"")
-  (setq-local pmd-/individual-var-format-fn #'pmd//ruby-interpolation-formatting-fn))
+  (setq-local pmd-/multi-var-format-fn #'pmd//ruby-interpolation-formatting-fn))
 
 (defun pmd//rust-setup ()
   (setq-local pmd-print-open "println!(")
@@ -198,13 +218,12 @@ Example: \"var = \" + var."
 (add-hook 'coffee-mode-hook 'pmd//coffee-setup)
 (add-hook 'rust-mode-hook 'pmd//rust-setup)
 
-
 (defun pmd//print-vars-internal (input)
   (when (not (looking-at-p "^[[:space:]]*$"))
     (end-of-line)
     (insert "\n")
     (back-to-indentation))
-  (insert (pmd//prepare-output (pmd//parse-input input)))
+  (insert (pmd//run-program-in-input-context input))
   (indent-according-to-mode))
 
 (defun pmd/print-vars (input)
