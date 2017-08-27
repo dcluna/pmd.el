@@ -20,7 +20,7 @@
 
 ;;; Commentary:
 
-;; Emacs package to automate insertion of debug print statements for various modes.
+;; Emacs package to automate insertion of debug print statements for various major modes.
 
 ;;; Code:
 (require 'cl)
@@ -37,13 +37,39 @@ means to remove KEY from ALIST if the new value is `eql' to DEFAULT."
     (let ((x (assq key alist)))
       (if x (cdr x) default))))
 
-(defvar pmd-input-separator ",")
-(defvar pmd-modifier-separator "/")
-(defvar pmd-output-separator " | ")
-(defvar pmd-require-escape-input-separator nil)
+(defgroup pmd nil
+  "Poor man's debugger"
+  :prefix "pmd-"
+  :group 'convenience
+  :link '(url-link :tag "Github" "https://github.com/dcluna/pmd.el"))
+
+(defcustom pmd-input-separator ","
+  "Token sequence that separates different variables."
+  :group 'pmd
+  :tag "pmd Input Separator"
+  :type 'string)
+
+(defcustom pmd-modifier-separator "/"
+  "Separator between modifiers and input."
+  :group 'pmd
+  :tag "pmd Modifier Separator"
+  :type 'string)
+
+(defcustom pmd-output-separator " | "
+  "Token sequence separating variables in the output statement."
+  :group 'pmd
+  :tag "pmd Output Separator"
+  :type 'string)
+
+(defcustom pmd-require-escape-input-separator nil
+  "If set, requires `pmd-input-separator' to be escaped with a `\\'. Can be overriden with the `re' modifiers."
+  :group 'pmd
+  :tag "pmd Escape Input Separator"
+  :type 'boolean)
 
 (defvar pmd-print-open nil
   "String that opens a print-var statement.")
+
 (defvar pmd-print-close nil
   "String that closes a print-var statement.")
 
