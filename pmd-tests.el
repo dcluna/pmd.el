@@ -26,7 +26,8 @@
   (pmd//js2-setup)
   (cl-letf (((symbol-function 'file-name-base)
              (lambda () "myawesomefilename")))
-    (should (equal  "console.log(\"myawesomefilename: \" + \"var1 = \" + var1 + \"  |  \" + \"var2 = \" + var2);"  (pmd//prepare-output (list "var1" "var2"))))))
+    (should (equal  "console.log(\"myawesomefilename: \" + \"var1 = \" + var1 + \"  |  \" + \"var2 = \" + var2);"  (pmd//prepare-output (list "var1" "var2"))))
+    (should (equal "console.log(\"myawesomefilename: \" + \"fn(\\\"var\\\") = \" + fn(\"var\"));" (pmd//prepare-output (list "fn(\"var\")"))))))
 
 (ert-deftest pmd//rust-prepare-output-test ()
   (pmd//rust-setup)

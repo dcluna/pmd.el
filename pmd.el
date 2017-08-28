@@ -161,6 +161,9 @@ means to remove KEY from ALIST if the new value is `eql' to DEFAULT."
   "Prepares print statement to display LIST-VARS."
   (pmd//apply-formatting-fn list-vars))
 
+(defun pmd//escape-str (to-escape in-str)
+  (replace-regexp-in-string to-escape (concat "\\" to-escape) in-str nil t))
+
 (defun pmd//ruby-interpolation-formatting-fn (list-vars)
   "VAR-formatting fn for languages that accept Ruby-ish string interpolation.
 Example: \"var = #{var}\"."
@@ -177,7 +180,7 @@ Example: \"var = \" + var."
    pmd-print-open
    "\""
    (concat (pmd//file-name-prefix) "\" + ")
-   (mapconcat (lambda (var) (format "\"%s = \" + %s" var var)) list-vars (concat " + \" " pmd-output-separator " \" + "))
+   (mapconcat (lambda (var) (format "\"%s = \" + %s" (pmd//escape-str "\"" var) var)) list-vars (concat " + \" " pmd-output-separator " \" + "))
    pmd-print-close))
 
 (defun pmd//rust-println-exp (list-vars)
