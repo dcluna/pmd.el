@@ -40,7 +40,7 @@
     (pmd//print-vars-internal "a,b")
     (pmd//print-vars-internal "el/(mapconcat 'identity '(\"var1\" \"var2\") \",\")")
     (pmd//print-vars-internal "sh/seq 1 1 3 | tr '\n' ',' | sed 's/,$//'")
-    (pmd//print-vars-internal "rb/('a'..'d').to_a.join(',')")
+    (pmd//print-vars-internal "rb/(\"a\"..\"d\").to_a.join(',')")
     (cl-letf (((symbol-function 'file-name-base)
                (lambda () "file")))
       (pmd//print-vars-internal "fl/test"))

@@ -95,7 +95,7 @@ means to remove KEY from ALIST if the new value is `eql' to DEFAULT."
                                     (pl . pmd--m-eval-input-as-perl)))
 
 (defun pmd//ruby-perl-eval-print (interpreter program)
-  (shell-command-to-string (concat interpreter " -e \"print " program "\"")))
+  (shell-command-to-string (concat interpreter " -e \"print " (pmd//escape-str "\"" program) "\"")))
 
 (defun pmd--m-eval-input-as-lisp (program)
   (list 'let '((input (eval (read input))))
