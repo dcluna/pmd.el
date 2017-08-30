@@ -3,6 +3,8 @@
 ;; Copyright (C) 2017  Daniel Luna
 
 ;; Author: Daniel Luna <dancluna@gmail.com>
+;; URL: http://github.com/dcluna/pmd.el
+;; Version: 0.1.0
 ;; Keywords: convenience, lisp, tools
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -229,9 +231,9 @@ Example: \"var = \" + var."
   (insert (pmd//run-program-in-input-context input))
   (indent-according-to-mode))
 
+;;;###autoload
 (defun pmd/print-vars (input)
   (interactive "sVar-string: ")
-
   (pmd//print-vars-internal input))
 
 (when (featurep 'evil)
