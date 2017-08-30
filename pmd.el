@@ -77,7 +77,7 @@ means to remove KEY from ALIST if the new value is `eql' to DEFAULT."
 (defvar pmd-print-close nil
   "String that closes a print-var statement.")
 (defvar pmd-show-file-name nil
-  "If set, prints `file-name-base' before the variable contents")
+  "If set, prints `file-name-base' before the variable contents.")
 
 (defvar pmd-callable-multi-var-format-fn nil
   "Formatting function for a list of variables.")
@@ -99,29 +99,36 @@ means to remove KEY from ALIST if the new value is `eql' to DEFAULT."
                                     (pl . pmd--m-eval-input-as-perl)))
 
 (defun pmd--ruby-perl-eval-print (interpreter program)
+  "Call INTERPRETER (currently only ruby and perl are supported) and evaluate PROGRAM as a single-line program for it."
   (shell-command-to-string (concat interpreter " -e \"print " (pmd--escape-str "\"" program) "\"")))
 
 (defun pmd--m-eval-input-as-lisp (program)
+  "Macro: generate code that evaluates its input as elisp code, then run PROGRAM with input set to the result of the evaluation."
   (list 'let '((input (eval (read input))))
         program))
 
 (defun pmd--m-eval-input-as-shell (program)
+  "Macro: generate code that evaluates its input as a shell script, then run PROGRAM with input set to the result of the evaluation."
   (list 'let '((input (shell-command-to-string input)))
         program))
 
 (defun pmd--m-eval-input-as-ruby (program)
+  "Macro: generate code that evaluates its input as a Ruby script, then run PROGRAM with input set to the result of the evaluation."
   (list 'let '((input (pmd--ruby-perl-eval-print "ruby" input)))
         program))
 
 (defun pmd--m-eval-input-as-perl (program)
+  "Macro: generate code that evaluates its input as a Perl script, then run PROGRAM with input set to the result of the evaluation."
   (list 'let '((input (pmd--ruby-perl-eval-print "perl" input)))
         program))
 
 (defun pmd--m-require-escape (program &optional value)
+  "Macro: generate a new PROGRAM that requires escaping the input separator before breaking tokens, depending on VALUE."
   (list 'let (list (list 'pmd-require-escape-input-separator (if (equal value 'false) nil t)))
      program))
 
 (defun pmd--m-show-file-name (program &optional value)
+  "Macro: generate a new PROGRAM that includes `file-name-base' on its output, depending on VALUE."
   (list 'let (list (list 'pmd-show-file-name (if (equal value 'false) nil t)))
         program))
 
@@ -134,7 +141,7 @@ means to remove KEY from ALIST if the new value is `eql' to DEFAULT."
     (apply mod-fn program args)))
 
 (defun pmd--process-modifiers (modifiers program)
-  "Generates a new PROGRAM from translating MODIFIERS in sequence."
+  "Translates MODIFIERS into elisp macros and generate a new PROGRAM by applying these in sequence."
   (reduce (lambda (new-program modifier)
             (pmd--apply-mod modifier new-program))
           (reverse modifiers)
@@ -149,28 +156,31 @@ means to remove KEY from ALIST if the new value is `eql' to DEFAULT."
    "[[:space:]]+"))
 
 (defun pmd--file-name-prefix ()
+  "If `pmd-show-file-name' is set, return `file-name-base' with a colon. Return nil otherwise."
   (if pmd-show-file-name (concat (file-name-base) ": ") nil))
 
 (defun pmd--run-program-in-input-context (input &optional program)
-  "Parses INPUT string into a list of variables."
+  "Parse INPUT string's modifiers, then run PROGRAM, possibly augmented by its modifiers."
   (let ((program (or program '(pmd--prepare-output (pmd--split-input input)))))
     (destructuring-bind (var-input modifiers) (pmd--extract-modifiers input)
       (let ((generated-program (pmd--process-modifiers modifiers program)))
         (eval `(let ((input ,var-input)) ,generated-program))))))
 
 (defun pmd--apply-formatting-fn (list-vars)
+  "Apply the current formatting function for this major mode, giving it LIST-VARS as an argument."
   (funcall pmd-callable-multi-var-format-fn list-vars))
 
 (defun pmd--prepare-output (list-vars)
-  "Prepares print statement to display LIST-VARS."
+  "Prepare print statement to display LIST-VARS."
   (pmd--apply-formatting-fn list-vars))
 
 (defun pmd--escape-str (to-escape in-str)
+  "Escape substring TO-ESCAPE with a quote in the string IN-STR."
   (replace-regexp-in-string to-escape (concat "\\" to-escape) in-str nil t))
 
 (defun pmd--ruby-interpolation-formatting-fn (list-vars)
-  "VAR-formatting fn for languages that accept Ruby-ish string interpolation.
-Example: \"var = #{var}\"."
+  "Formatting function for languages that accept Ruby-ish string interpolation.
+Example: `puts \"var = #{var}\"'."
   (concat
    pmd-print-open
    (pmd--file-name-prefix)
@@ -178,8 +188,8 @@ Example: \"var = #{var}\"."
    pmd-print-close))
 
 (defun pmd--js-interpolation-formatting-fn (list-vars)
-  "VAR-formatting fn for Javascript.
-Example: \"var = \" + var."
+  "Formatting function for Javascript.
+Example: `console.log(\"var = \" + var);'."
   (concat
    pmd-print-open
    "\""
@@ -188,6 +198,8 @@ Example: \"var = \" + var."
    pmd-print-close))
 
 (defun pmd--rust-println-exp (list-vars)
+  "Formatting function for Rust.
+Example: `println!(\"var = {:?}\", var);'"
   (concat
    pmd-print-open
    "\""
@@ -198,22 +210,26 @@ Example: \"var = \" + var."
    pmd-print-close))
 
 (defun pmd--js2-setup ()
+  "Hook to set up pmd.el in ‘js2-mode’."
   (setq-local pmd-print-open "console.log(")
   (setq-local pmd-print-close ");")
   (setq-local pmd-show-file-name t)
   (setq-local pmd-callable-multi-var-format-fn #'pmd--js-interpolation-formatting-fn))
 
 (defun pmd--coffee-setup ()
+  "Hook to set up pmd.el in ‘coffee-mode’."
   (setq-local pmd-print-open "console.log \"")
   (setq-local pmd-print-close "\"")
   (setq-local pmd-callable-multi-var-format-fn #'pmd--ruby-interpolation-formatting-fn))
 
 (defun pmd--ruby-setup ()
+  "Hook to set up pmd.el in ‘ruby-mode’."
   (setq-local pmd-print-open "puts \"")
   (setq-local pmd-print-close "\"")
   (setq-local pmd-callable-multi-var-format-fn #'pmd--ruby-interpolation-formatting-fn))
 
 (defun pmd--rust-setup ()
+  "Hook to set up pmd.el in ‘rust-mode’."
   (setq-local pmd-print-open "println!(")
   (setq-local pmd-print-close ");")
   (setq-local pmd-callable-multi-var-format-fn #'pmd--rust-println-exp))
@@ -235,6 +251,7 @@ Example: \"var = \" + var."
 
 ;;;###autoload
 (defun pmd-print-vars (input)
+  "Parse INPUT in the pmd.el syntax and debug-print the specified variables."
   (interactive "sVar-string: ")
   (pmd--print-vars-internal input))
 
