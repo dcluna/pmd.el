@@ -4,7 +4,7 @@
 
 ;; Author: Daniel Luna <dancluna@gmail.com>
 ;; URL: http://github.com/dcluna/pmd.el
-;; Version: 0.1.0
+;; Version: 0.1.1
 ;; Keywords: convenience, lisp, tools
 ;; Package-Requires: ((emacs "24.3"))
 
@@ -209,6 +209,7 @@ Example: `println!(\"var = {:?}\", var);'"
    (mapconcat 'identity list-vars ", ")
    pmd-print-close))
 
+;;;###autoload
 (defun pmd--js2-setup ()
   "Hook to set up pmd.el in ‘js2-mode’."
   (setq-local pmd-print-open "console.log(")
@@ -216,31 +217,37 @@ Example: `println!(\"var = {:?}\", var);'"
   (setq-local pmd-show-file-name t)
   (setq-local pmd-callable-multi-var-format-fn #'pmd--js-interpolation-formatting-fn))
 
+;;;###autoload
 (defun pmd--coffee-setup ()
   "Hook to set up pmd.el in ‘coffee-mode’."
   (setq-local pmd-print-open "console.log \"")
   (setq-local pmd-print-close "\"")
   (setq-local pmd-callable-multi-var-format-fn #'pmd--ruby-interpolation-formatting-fn))
 
+;;;###autoload
 (defun pmd--ruby-setup ()
   "Hook to set up pmd.el in ‘ruby-mode’."
   (setq-local pmd-print-open "puts \"")
   (setq-local pmd-print-close "\"")
   (setq-local pmd-callable-multi-var-format-fn #'pmd--ruby-interpolation-formatting-fn))
 
+;;;###autoload
 (defun pmd--rust-setup ()
   "Hook to set up pmd.el in ‘rust-mode’."
   (setq-local pmd-print-open "println!(")
   (setq-local pmd-print-close ");")
   (setq-local pmd-callable-multi-var-format-fn #'pmd--rust-println-exp))
 
-(add-hook 'js2-mode-hook 'pmd--js2-setup)
-(add-hook 'typescript-mode-hook 'pmd--js2-setup)
-(add-hook 'enh-ruby-mode-hook 'pmd--ruby-setup)
-(add-hook 'ruby-mode-hook 'pmd--ruby-setup)
-(add-hook 'coffee-mode-hook 'pmd--coffee-setup)
-(add-hook 'rust-mode-hook 'pmd--rust-setup)
+;;;###autoload
+(progn
+  (add-hook 'js2-mode-hook 'pmd--js2-setup)
+  (add-hook 'typescript-mode-hook 'pmd--js2-setup)
+  (add-hook 'enh-ruby-mode-hook 'pmd--ruby-setup)
+  (add-hook 'ruby-mode-hook 'pmd--ruby-setup)
+  (add-hook 'coffee-mode-hook 'pmd--coffee-setup)
+  (add-hook 'rust-mode-hook 'pmd--rust-setup))
 
+;;;###autoload
 (defun pmd--print-vars-internal (input)
   (when (not (looking-at-p "^[[:space:]]*$"))
     (end-of-line)
@@ -255,6 +262,7 @@ Example: `println!(\"var = {:?}\", var);'"
   (interactive "sVar-string: ")
   (pmd--print-vars-internal input))
 
+;;;###autoload
 (when (featurep 'evil)
   (evil-define-command pmd-evil-print-vars (input)
     (interactive "<a>")
