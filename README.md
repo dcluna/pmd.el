@@ -1,5 +1,7 @@
 # pmd, the poor man's debugger #
 
+[![Build Status](https://travis-ci.org/dcluna/pmd.el.svg?branch=master)](https://travis-ci.org/dcluna/pmd.el)
+
 ## Purpose ##
 
 Small package to automate the tedium of inserting debug-print statements in the code. It includes an interactive function that accepts a mini-language for printing multiple variables.
