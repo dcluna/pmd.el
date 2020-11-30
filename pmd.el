@@ -262,19 +262,22 @@ Example: `println!(\"var = {:?}\", var);'"
   (interactive "sVar-string: ")
   (pmd--print-vars-internal input))
 
+;;;###autoload
+(defun pmd-setup-evil ()
+  (interactive)
+  (progn
+    (require 'evil-common)
+    (evil-define-command pmd-evil-print-vars (input)
+      (interactive "<a>")
+      (pmd--print-vars-internal input))
 
-(add-hook 'evil-after-load-hook
-          (lambda ()
-            (progn
-              (require 'evil-common)
-              (evil-define-command pmd-evil-print-vars (input)
-                (interactive "<a>")
-                (pmd--print-vars-internal input))
+    (eval-after-load 'evil-ex
+      '(progn
+        (evil-ex-define-cmd "print-vars" 'pmd-evil-print-vars)
+        (evil-ex-define-cmd "pv" 'pmd-evil-print-vars)))))
 
-              (eval-after-load 'evil-ex
-                '(progn
-                   (evil-ex-define-cmd "print-vars" 'pmd-evil-print-vars)
-                   (evil-ex-define-cmd "pv" 'pmd-evil-print-vars))))))
+;;;###autoload
+(add-hook 'evil-after-load-hook #'pmd-setup-evil)
 
 (provide 'pmd)
 ;;; pmd.el ends here
